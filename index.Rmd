@@ -179,8 +179,6 @@ ggplot(brome.prod, aes(water.treatment, brome.per.capita, color = native.species
 ggplot(brome.prod, aes(water.treatment, final.brome)) + geom_smooth(method = "lm")
 
 
-#test for significant correlation between moisture and treatment
-cor.test(sur$soil.moisture, sur$water.treatment)
 
 ```
 
@@ -230,6 +228,27 @@ for (i in 1:length(grobs)){
 p <- do.call("grid.arrange", c(grobs, ncol = 1))
 p
 
+
+```
+
+Supplemental figure
+
+```{r, soil moisture}
+
+
+#test for significant correlation between moisture and treatment
+cor.test(sur$soil.moisture, sur$water.treatment)
+
+ggplot(sur, aes(as.factor(water.treatment), soil.moisture)) + geom_boxplot() + ylab("Volumetric water content (% volume)") + xlab("Water Treatment (ml)") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) 
+
+
+m1 <- aov(soil.moisture ~ as.factor(water.treatment), dat = sur)
+summary(m1)
+TukeyHSD(m1)
+
+m2 <- lm(soil.moisture ~ water.treatment, data = sur)
+summary(m2)
 
 ```
 
