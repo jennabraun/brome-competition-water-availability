@@ -58,6 +58,7 @@ knitr::kable(car::Anova(m4, type = 2, test.statistic="LR"))
 check_overdispersion(m4)
 
 a <- emmeans(m4, list(pairwise ~ native.species*mixture), adjust = "tukey")
+a
 a <- summary(a)
 b <- a$`pairwise differences of native.species, mixture`
 write.csv(b, "data/estmodelcontrasts.csv")
@@ -135,7 +136,9 @@ ggplot(native.prod, aes(per.capita)) + geom_density()
 
 
 m2 <- glm(per.capita ~ native.species * water.treatment * mixture, data = native.prod, family = Gamma(link = "log"))
-plot(m2)
+
+
+
 #AIC(m1, m2)
 summary(m2)
 knitr::kable(car::Anova(m2))
@@ -187,8 +190,8 @@ ggplot(brome.prod, aes(water.treatment, final.brome)) + geom_smooth(method = "lm
 #Figure 1
 
 #establishment - plant count at census 2
-a <- ggplot(est, aes(water.treatment, native.plant, color = mixture)) + geom_smooth(method = "lm") + facet_grid(~native.species) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(
+a <- ggplot(est, aes(water.treatment, native.plant, color = mixture)) + geom_smooth(method = "lm") + geom_jitter(width = 0.3, height = 0.2) + facet_grid(~native.species) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank())  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(
   strip.background = element_rect(
      color="black", fill="white", size=.75, linetype="solid"
      ))
@@ -251,6 +254,66 @@ m2 <- lm(soil.moisture ~ water.treatment, data = sur)
 summary(m2)
 
 ```
+
+Figure 2
+
+```{r}
+
+#Figure 2 - brome
+
+#use brome.est
+#establishment - plant count at census 2
+a <- ggplot(brome.est, aes(water.treatment, brome.plant)) + geom_smooth(method = "lm", color = "black") + geom_jitter(width = 0.3) + facet_grid(~native.species) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank())  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(strip.background = element_rect(color="black", fill="white", size=.75, linetype="solid")) + theme(text = element_text(size=20))
+        
+a
+
+#survival - plant count at census 3
+b <- ggplot(brome.sur, aes(water.treatment, brome.plant)) + geom_smooth(method = "lm" ,color = "black") + facet_grid(~native.species) + geom_jitter(width = 0.3) + ylab("Final Count") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
+theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=20))
+b
+
+#biomass
+c <- ggplot(brome.prod, aes(water.treatment, brome.per.capita)) + geom_smooth(method = "lm",color = "black") + facet_grid(~native.species)+ geom_jitter(width = 0.3) + ylab("Per capita biomass (g)") +xlab("Water Treatment (ml)")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
+theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=20))
+c
+
+#l1 <- get_legend(c)
+
+grid.arrange(a, b, c, ncol = 1)
+
+
+
+
+
+
+plots <- list(a,b,c)
+grobs <- list()
+widths <- list()
+
+for (i in 1:length(plots)){
+    grobs[[i]] <- ggplotGrob(plots[[i]])
+    widths[[i]] <- grobs[[i]]$widths[2:5]
+}
+
+maxwidth <- do.call(grid::unit.pmax, widths)
+for (i in 1:length(grobs)){
+     grobs[[i]]$widths[2:5] <- as.list(maxwidth)
+}
+
+p <- do.call("grid.arrange", c(grobs, ncol = 1))
+p
+
+
+
+```
+
+
+
+
+
 
 ```{r, tables}
 
