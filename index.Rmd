@@ -137,21 +137,33 @@ ggplot(native.prod, aes(per.capita)) + geom_density()
 
 m2 <- glm(per.capita ~ native.species * water.treatment * mixture, data = native.prod, family = Gamma(link = "log"))
 
-
-
 #AIC(m1, m2)
 summary(m2)
-knitr::kable(car::Anova(m2))
+knitr::kable(car::Anova(m2, test = "LR"))
 
 
-a <- emmeans(m2, list(pairwise ~ native.species*mixture), adjust = "tukey")
+m3 <- glm(native.biomass ~ native.species * water.treatment * mixture, data = native.prod, family = Gamma(link = "log"))
+
+summary(m3)
+car::Anova(m3)
+
+
+a <- emmeans(m3, list(pairwise ~ native.species*mixture), adjust = "tukey", type = "response")
+
+a$`emmeans of native.species, mixture`
 a <- summary(a)
 options(scipen = 999)
 b <- a$`pairwise differences of native.species, mixture`
 b
 
 
-emtrends(m2, pairwise~native.species, var = "water.treatment")
+c <- lstrends(m2, ~native.species, var = "water.treatment")
+c
+
+
+native.prod %>% group_by(native.species) %>% summarise(mean(per.capita))
+
+emtrends(m2, pairwise~native.species|mixture, var = "water.treatment")
 
 emtrends(m2, ~native.species, var = "water.treatment")
 
@@ -170,7 +182,7 @@ brome.prod <- filter(brome.prod, brome.per.capita > 0)
 m1.ad <- glm(brome.per.capita ~ water.treatment * native.species, data = brome.prod, family = Gamma(link = "log"))
 summary(m1.ad)
 knitr::kable(car::Anova(m1.ad))
-emtrends(m1.ad, ~native.species, var = "water.treatment")
+emtrends(m1.ad, ~native.species, var = "water.treatment", type = "response")
 
 emmeans(m1.ad, list(pairwise ~ native.species), adjust = "tukey")
 a <- summary(m1.ad)
@@ -190,24 +202,22 @@ ggplot(brome.prod, aes(water.treatment, final.brome)) + geom_smooth(method = "lm
 #Figure 1
 
 #establishment - plant count at census 2
-a <- ggplot(est, aes(water.treatment, native.plant, color = mixture)) + geom_smooth(method = "lm") + geom_jitter(width = 0.3, height = 0.2) + facet_grid(~native.species) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank())  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(
-  strip.background = element_rect(
-     color="black", fill="white", size=.75, linetype="solid"
-     ))
-        
-a
+a <- ggplot(est) + geom_violin(aes(x = as.factor(water.treatment), y = native.plant, color = mixture, linetype = mixture), fill = NA, position = position_dodge(width = 0.2))  + facet_grid(~native.species) + geom_smooth(data = est, mapping = aes(x = as.numeric(as.factor(water.treatment)), y = native.plant, color = mixture, linetype = mixture, fill = mixture), method = "lm",  linewidth = 0.6, alpha = 0.2)  + stat_summary(aes(x = factor(water.treatment), y = native.plant, color = mixture, fill = mixture), fun=mean, geom="point", shape=23, size=2) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(strip.background = element_rect(color="black", fill="white", size=.75, linetype="solid")) +scale_color_manual(values = c("darkcyan", "#F8766D")) + scale_shape_manual(values = c("darkcyan", "#F8766D")) + scale_fill_manual(values = c("darkcyan", "#F8766D"))
+a  
 
 #survival - plant count at census 3
-b <- ggplot(sur, aes(water.treatment, native.plant, color = mixture)) + geom_smooth(method = "lm") + facet_grid(~native.species) + ylab("Survival") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
-theme(strip.background = element_blank(), strip.text = element_blank())
+b <- ggplot(sur) + geom_violin(aes(x = as.factor(water.treatment), y = native.plant, color = mixture, linetype = mixture), fill = NA, position = position_dodge(width = 0.2))  + facet_grid(~native.species) + geom_smooth(data = sur, mapping = aes(x = as.numeric(as.factor(water.treatment)), y = native.plant, color = mixture, linetype = mixture, fill = mixture), method = "lm",  linewidth = 0.6, , alpha = 0.2) + stat_summary(aes(x = factor(water.treatment), y = native.plant, color = mixture, fill = mixture), fun=mean, geom="point", shape=23, size=2) + ylab("Survival") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + theme(strip.background = element_blank(), strip.text = element_blank()) + scale_color_manual(values = c("darkcyan", "#F8766D")) + scale_shape_manual(values = c("darkcyan", "#F8766D")) + scale_fill_manual(values = c("darkcyan", "#F8766D"))
 b
 
+
 #biomass
-c <- ggplot(native.prod, aes(water.treatment, native.biomass, color = mixture)) + geom_smooth(method = "lm") + facet_grid(~native.species) + ylab("Per capita biomass (g)") +xlab("Water Treatment (ml)")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
-theme(strip.background = element_blank(), strip.text = element_blank())
+c <- ggplot(native.prod) + geom_violin(aes(x = as.factor(water.treatment), y = per.capita, color = mixture, , linetype = mixture), fill = NA, position = position_dodge(width = 0.2))  + facet_grid(~native.species) + geom_smooth(data = filter(native.prod, native.species != "Phacelia tancetifolia"), mapping = aes(x = as.numeric(as.factor(water.treatment)), y = per.capita, color = mixture, linetype = mixture, fill = mixture), method = "lm",  linewidth = 0.6, alpha = 0.2) + stat_summary(aes(x = factor(water.treatment), y = per.capita, color = mixture, fill = mixture), fun=mean, geom="point", shape=23, size=2) + geom_smooth(data = filter(native.prod, native.species == "Phacelia tancetifolia"), mapping = aes(x = as.numeric(as.factor(water.treatment)), y = per.capita, linetype = mixture, fill = mixture), method = "lm",  linewidth = 0.6, alpha = 0.2, color = "lightgray", fill = "lightgray") + stat_summary(aes(x = factor(water.treatment), y = per.capita, color = mixture, fill = mixture), fun=mean, geom="point", shape=23, size=2) + ylab("Per capita biomass (g)") +xlab("Water Treatment (ml)")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank())  + 
+theme(strip.background = element_blank(), strip.text = element_blank()) + scale_color_manual(values = c("darkcyan", "#F8766D")) + scale_shape_manual(values = c("darkcyan", "#F8766D")) + scale_fill_manual(values = c("darkcyan", "#F8766D"))
+
+
 c
 
 #l1 <- get_legend(c)
@@ -264,20 +274,20 @@ Figure 2
 #use brome.est
 #establishment - plant count at census 2
 a <- ggplot(brome.est, aes(water.treatment, brome.plant)) + geom_smooth(method = "lm", color = "black") + geom_jitter(width = 0.3) + facet_grid(~native.species) + ylab("Establishment") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank())  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(strip.background = element_rect(color="black", fill="white", size=.75, linetype="solid")) + theme(text = element_text(size=20))
+panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.title = element_blank())  + theme(legend.box = "horizontal", legend.position = c(0.9, 0.7), legend.title = element_blank()) + theme(strip.background = element_rect(color="black", fill="white", size=.75, linetype="solid")) + theme(text = element_text(size=14))
         
 a
 
 #survival - plant count at census 3
-b <- ggplot(brome.sur, aes(water.treatment, brome.plant)) + geom_smooth(method = "lm" ,color = "black") + facet_grid(~native.species) + geom_jitter(width = 0.3) + ylab("Final Count") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+b <- ggplot(brome.sur, aes(water.treatment, brome.plant)) + geom_smooth(method = "lm" ,color = "black") + facet_grid(~native.species) + geom_jitter(width = 0.3) + ylab("Survival") +xlab("")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
-theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=20))
+theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=14))
 b
 
 #biomass
 c <- ggplot(brome.prod, aes(water.treatment, brome.per.capita)) + geom_smooth(method = "lm",color = "black") + facet_grid(~native.species)+ geom_jitter(width = 0.3) + ylab("Per capita biomass (g)") +xlab("Water Treatment (ml)")  + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 panel.background = element_blank(), axis.line = element_line(colour = "black")) +  theme(legend.position = "none", legend.title = element_blank()) + scale_color_discrete(labels = c("No Brome", "With Brome")) + 
-theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=20))
+theme(strip.background = element_blank(), strip.text = element_blank()) + theme(text = element_text(size=14))
 c
 
 #l1 <- get_legend(c)
